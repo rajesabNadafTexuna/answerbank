@@ -5,6 +5,10 @@ import boto3
 import streamlit as st
 
 ## We will be using Titan Embeddings Model To generate Embedding
+username = os.getenv("BEDROCK_USERNAME")
+password = os.getenv("BEDROCK_PASSWORD")
+region = os.getenv("BEDROCK_DEFAULT_REGION")
+
 
 from langchain_community.embeddings import BedrockEmbeddings
 from langchain.llms.bedrock import Bedrock
@@ -23,11 +27,22 @@ from langchain.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 
-## Bedrock Clients
-bedrock = boto3.client(service_name="bedrock-runtime")
+# Use these variables to initialize the boto3 client
+bedrock = boto3.client(
+    service_name="bedrock-runtime",
+    aws_secret_access_key=password,
+    aws_access_key_id=username,
+    region_name="us-east-1"
+)
+
 bedrock_embeddings = BedrockEmbeddings(model_id="amazon.titan-embed-text-v1", client=bedrock)
 
-
+def embed_query_safe(text):
+    try:
+        return bedrock_embeddings.embed_query(text)
+    except Exception as e:
+        st.error(f"Error embedding query: {e}")
+        return None
 ## Data ingestion
 def data_ingestion():
     loader = PyPDFDirectoryLoader("data")
